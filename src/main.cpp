@@ -5,7 +5,7 @@
 
 IPAddress gateWay;
 #include <WifiConnect.h>
-
+// Port
 const int PORT = 9091;
 
 WiFiClient client;
@@ -121,7 +121,7 @@ void tt()
 
 void loop()
 {
-  delay(5000);
+  delay(50);
 
   ArduinoOTA.handle();
 
