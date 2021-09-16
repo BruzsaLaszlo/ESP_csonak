@@ -12,17 +12,15 @@ void connectWifi(int which)
   WiFi.mode(WIFI_STA);
   WiFi.hostname("Csonak_ESP");
   WiFi.begin(ssid[which], password[which]);
+  Serial.println("Connecting...");
   while (WiFi.status() != WL_CONNECTED)
   {
+    Serial.print(".");
     delay(1000);
   }
   gateWay = WiFi.gatewayIP();
-  long rssi = WiFi.RSSI();
+  //long rssi = WiFi.RSSI();
   Serial.print("IP: ");
-  Serial.println(WiFi.gatewayIP().toString());
-}
-
-int32_t signalStrenght()
-{
-  return WiFi.RSSI();
+  Serial.println(WiFi.localIP().toString());
+  Serial.println("Csatlakozva!");
 }
