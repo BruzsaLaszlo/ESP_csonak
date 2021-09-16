@@ -5,7 +5,7 @@
 
 IPAddress gateWay;
 #include <WifiConnect.h>
-
+// Port
 const int PORT = 9091;
 
 WiFiClient client;
