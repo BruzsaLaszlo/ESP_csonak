@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include <ArduinoOTA.h>
 #include <firebase.h>
+#include <gprs.h>
 
 IPAddress gateWay;
 #include <WifiConnect.h>
@@ -32,173 +33,187 @@ unsigned long t = millis();
 #define WAVGAT_UNO 4
 #define NODEMCU 44
 
+
+
 void setPins()
 {
-  Wire.beginTransmission(WAVGAT_UNO); // transmit to device #4
-  {
-    // Csörlő
+    Wire.beginTransmission(WAVGAT_UNO); // transmit to device #4
     {
-      if (b[0] == 1)
-      {
-        Wire.write(ELORE_PIN);
-        Wire.write(HIGH);
-        Wire.write(HATRA_PIN);
-        Wire.write(LOW);
-      }
-      else if (b[0] == 2)
-      {
-        Wire.write(ELORE_PIN);
-        Wire.write(LOW);
-        Wire.write(HATRA_PIN);
-        Wire.write(HIGH);
-      }
-      else
-      {
-        Wire.write(ELORE_PIN);
-        Wire.write(LOW);
-        Wire.write(HATRA_PIN);
-        Wire.write(LOW);
-      }
+        // Csörlő
+        {
+            if (b[0] == 1)
+            {
+                Wire.write(ELORE_PIN);
+                Wire.write(HIGH);
+                Wire.write(HATRA_PIN);
+                Wire.write(LOW);
+            }
+            else if (b[0] == 2)
+            {
+                Wire.write(ELORE_PIN);
+                Wire.write(LOW);
+                Wire.write(HATRA_PIN);
+                Wire.write(HIGH);
+            }
+            else
+            {
+                Wire.write(ELORE_PIN);
+                Wire.write(LOW);
+                Wire.write(HATRA_PIN);
+                Wire.write(LOW);
+            }
+        }
+        // LED
+        {
+            for (int i = 0; i < SIZE_LEDS; i++)
+            {
+                Wire.write(LEDS_PINS[i]);
+                Wire.write(leds[i]);
+            }
+        }
+        // RELAYs
+        {
+            Wire.write(RELAY1);
+            Wire.write(LOW);
+            Wire.write(RELAY2);
+            Wire.write(LOW);
+        }
     }
-    // LED
-    {
-      for (int i = 0; i < SIZE_LEDS; i++)
-      {
-        Wire.write(LEDS_PINS[i]);
-        Wire.write(leds[i]);
-      }
-    }
-    // RELAYs
-    {
-      Wire.write(RELAY1);
-      Wire.write(LOW);
-      Wire.write(RELAY2);
-      Wire.write(LOW);
-    }
-  }
-  Wire.endTransmission(); // stop transmitting
-  if (b[0] > 0)
-    Serial.println("firsttttttttt");
+    Wire.endTransmission(); // stop transmitting
+    if (b[0] > 0)
+        Serial.println("firsttttttttt");
 }
 
 //void(* resetFunc) (void) = 0; //declare reset function @ address 0
 //void reset() { asm volatile ("jmp 0"); }
 //ESP.reset();
 
+
 void setup()
 {
 
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  Serial.println("Hello!");
+    Serial.println("Hello!");
 
-  b[0] = FIRST_FLAG;
-  EEPROM.begin(8);
-  for (int i = 0; i < 6; i++)
-  {
-    leds[i] = EEPROM.read(i);
-    b[i + 1] = leds[i];
-  }
+    b[0] = FIRST_FLAG;
+    EEPROM.begin(8);
+    for (int i = 0; i < 6; i++)
+    {
+        leds[i] = EEPROM.read(i);
+        b[i + 1] = leds[i];
+    }
 
-  Wire.begin();
-  delay(100);
-  setPins();
+    Wire.begin();
+    delay(100);
+    setPins();
 
-  connectWifi(0);
+    connectWifi(0);
 
-  setupFirebase();
-  
-  client.setTimeout(300);
-  ArduinoOTA.begin();
+    //setupFirebase();
+
+    client.setTimeout(300);
+    ArduinoOTA.begin();
 }
 
 void tt()
 {
-  Serial.print(millis() - t);
-  Serial.println("ms");
-  t = millis();
+    Serial.print(millis() - t);
+    Serial.println("ms");
+    t = millis();
 }
+
+boolean test = true;
 
 void loop()
 {
-  delay(50);
+    delay(50);
 
-  ArduinoOTA.handle();
+    ArduinoOTA.handle();
 
-  if (client.connect(gateWay, PORT))
-  {
-    client.println("ESP8266: Connected!");
-
-    client.readStringUntil('Q');
-    b[0] = atoi(client.readStringUntil('Q').c_str());
-    if (b[0] == 100)
+    if (client.connect(gateWay, PORT))
     {
-      Serial.println("first");
-      b[0] = 0;
-      char c[4];
-      for (int i = 0; i < SIZE_LEDS; i++)
-      {
-        sprintf(c, "%d", leds[i]);
-        client.println(c);
-      }
-      client.stop();
-    }
-    else if (client.available() > 0)
-    {
-      for (int i = 1; i < SIZE_B; i++)
-        b[i] = atoi(client.readStringUntil('Q').c_str());
+        client.println("ESP8266: Connected!");
 
-      boolean l = false;
-      for (int i = 0; i < 6; i++)
-        if (b[i + 1] != leds[i])
+        client.readStringUntil('Q');
+        b[0] = atoi(client.readStringUntil('Q').c_str());
+        if (b[0] == 100)
         {
-          leds[i] = b[i + 1];
-          EEPROM.write(i, leds[i]);
-          l = true;
+            Serial.println("first");
+            b[0] = 0;
+            char c[4];
+            for (int i = 0; i < SIZE_LEDS; i++)
+            {
+                sprintf(c, "%d", leds[i]);
+                client.println(c);
+            }
+            client.stop();
         }
-      if (l)
-        if (EEPROM.commit())
-          Serial.println("EEPROM-ba elmentve");
+        else if (client.available() > 0)
+        {
+            for (int i = 1; i < SIZE_B; i++)
+                b[i] = atoi(client.readStringUntil('Q').c_str());
+
+            boolean l = false;
+            for (int i = 0; i < 6; i++)
+                if (b[i + 1] != leds[i])
+                {
+                    leds[i] = b[i + 1];
+                    EEPROM.write(i, leds[i]);
+                    l = true;
+                }
+            if (l)
+                if (EEPROM.commit())
+                    Serial.println("EEPROM-ba elmentve");
+        }
+        client.stop();
     }
-    client.stop();
-  }
-  else
-  {
-    b[0] = 0;
-    client.stop();
-  }
-
-  setPins();
-
-  // a kapcsolat tesztelese (Wavgat))
-  {
-    //MAX 128 bytes
-    uint8_t requestSize = Wire.requestFrom(WAVGAT_UNO, (PINS_A));
-    if (requestSize == 0)
-      Serial.println("Nincs meg az UNO!!!!");
-    while (Wire.available() > 0)
-      Wire.read();
-  }
-
-  // get GPS data
-  {
-    gpsDataStruct data;
-
-    int numbytes = sizeof(data);
-    int n = Wire.requestFrom(2, numbytes);
-    if (n == numbytes) // check if the same amount received as requested
+    else
     {
-      Wire.readBytes((char *)&data, n);
+        b[0] = 0;
+        client.stop();
     }
-  }
 
-  /* SERIAL PRINT */
-  for (int i = 0; i < SIZE_B; i++)
-  {
-    Serial.print(b[i]);
-    Serial.print("  ");
-  }
-  Serial.print(millis() - t);
-  Serial.println("ms");
-  t = millis();
+    setPins();
+
+    // a kapcsolat tesztelese (Wavgat))
+    {
+        //MAX 128 bytes
+        uint8_t requestSize = Wire.requestFrom(WAVGAT_UNO, (PINS_A));
+        if (requestSize == 0)
+            Serial.println("Nincs meg az UNO!!!!");
+        while (Wire.available() > 0)
+            Wire.read();
+    }
+
+    // get GPS data
+    /*{
+        gpsDataStruct data;
+
+        int numbytes = sizeof(data);
+        int n = Wire.requestFrom(2, numbytes);
+        if (n == numbytes) // check if the same amount received as requested
+        {
+            Wire.readBytes((char *)&data, n);
+        }
+
+        String s = getJSONgpsData(data);
+        postToFirebase("GPSdata",s,&http_client);
+    }*/
+
+    if (test){
+        setupFirebase();
+        testFirebase();
+        test = false;
+    }
+
+    /* SERIAL PRINT */
+    for (int i = 0; i < SIZE_B; i++)
+    {
+        Serial.print(b[i]);
+        Serial.print("  ");
+    }
+    Serial.print(millis() - t);
+    Serial.println("ms");
+    t = millis();
 }
