@@ -30,8 +30,6 @@ const char PATH_WARNING_SENSORS[20] = "/sensors_warning/";
 FirebaseData firebaseData;
 FirebaseAuth auth;
 FirebaseConfig config;
-//FirebaseData firebaseData;
-//char path[127];
 
 void setupFirebase()
 {
@@ -56,26 +54,29 @@ void setupFirebase()
     //Firebase.begin(DATABASE_URL, "<database secret>");
 }
 
-void testFirebase()
+String * testFirebase()
 {
+    String * s = new String[4]{"","","",""};
     int testInt = 1000;
     String path = "/testFirebase/testInt";
     if (Firebase.ready())
     {
-        Serial.printf("Set int... %s\n", Firebase.setInt(firebaseData, path+"/int", testInt) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf((char *)&s[0],"Set int... %s", Firebase.setInt(firebaseData, path, testInt) ? "ok" : firebaseData.errorReason().c_str());
+        //Serial.printf("Set int... %s\n", Firebase.setInt(firebaseData, path, testInt) ? "ok" : firebaseData.errorReason().c_str());
 
-        Serial.printf("Get int... %s\n", Firebase.getInt(firebaseData, path) ? String(firebaseData.intData()).c_str() : firebaseData.errorReason().c_str());
+        sprintf((char *)&s[1],"Get int... %s", Firebase.getInt(firebaseData, path) ? String(firebaseData.intData()).c_str() : firebaseData.errorReason().c_str());
 
         FirebaseJson json;
         json.add("value", testInt);
         json.add("value2", testInt + 300);
         json.add("value3", testInt + 400);
 
-        Serial.printf("Push json... %s\n", Firebase.pushJSON(firebaseData, path + "/test/push", json) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf((char *)&s[2],"Push json... %s", Firebase.pushJSON(firebaseData, path + "/test/push", json) ? "ok" : firebaseData.errorReason().c_str());
 
         json.set("value", testInt + 100);
-        Serial.printf("Update json... %s\n\n", Firebase.updateNode(firebaseData, String(path + "/test/push/" + firebaseData.pushName()), json) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf((char *)&s[3],"Update json... %s", Firebase.updateNode(firebaseData, String(path + "/test/push/" + firebaseData.pushName()), json) ? "ok" : firebaseData.errorReason().c_str());
     }
+    return s;
 }
 
 void setFirebase(char *path, gpsDataStruct data)

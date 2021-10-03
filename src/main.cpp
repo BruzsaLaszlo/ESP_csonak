@@ -2,7 +2,14 @@
 #include <EEPROM.h>
 #include <ArduinoOTA.h>
 #include <firebase.h>
+
+#define TEST_SIM800 FALSE
+
+#if TEST_SIM800
 #include <gprs.h>
+#else
+#include <sim800_test.h>
+#endif
 
 IPAddress gateWay;
 #include <WifiConnect.h>
@@ -32,8 +39,6 @@ unsigned long t = millis();
 #include <Wire.h>
 #define WAVGAT_UNO 4
 #define NODEMCU 44
-
-
 
 void setPins()
 {
@@ -80,21 +85,18 @@ void setPins()
         }
     }
     Wire.endTransmission(); // stop transmitting
-    if (b[0] > 0)
-        Serial.println("firsttttttttt");
 }
 
 //void(* resetFunc) (void) = 0; //declare reset function @ address 0
 //void reset() { asm volatile ("jmp 0"); }
 //ESP.reset();
 
-
 void setup()
 {
 
     Serial.begin(115200);
 
-    Serial.println("Hello!");
+    Serial.println("/nProgram started!");
 
     b[0] = FIRST_FLAG;
     EEPROM.begin(8);
@@ -110,8 +112,6 @@ void setup()
 
     connectWifi(0);
 
-    //setupFirebase();
-
     client.setTimeout(300);
     ArduinoOTA.begin();
 }
@@ -123,7 +123,19 @@ void tt()
     t = millis();
 }
 
-boolean test = true;
+boolean test = false;
+
+void logPhone(String out[])
+{
+    if (client.connect(gateWay, PORT))
+    {
+        client.println("Serial.monitor");
+        for (int i = 0; i < sizeof(out); i++)
+            client.println(out[i]);
+        client.println("END");
+        client.stop();
+    }
+}
 
 void loop()
 {
@@ -136,10 +148,12 @@ void loop()
         client.println("ESP8266: Connected!");
 
         client.readStringUntil('Q');
-        b[0] = atoi(client.readStringUntil('Q').c_str());
+        b[0] = atoi(client.readStringUntil('B').c_str());
         if (b[0] == 100)
         {
+            test = client.readStringUntil('S') == "true" ? true : false;
             Serial.println("first");
+            Serial.println(test);
             b[0] = 0;
             char c[4];
             for (int i = 0; i < SIZE_LEDS; i++)
@@ -152,7 +166,7 @@ void loop()
         else if (client.available() > 0)
         {
             for (int i = 1; i < SIZE_B; i++)
-                b[i] = atoi(client.readStringUntil('Q').c_str());
+                b[i] = atoi(client.readStringUntil('B').c_str());
 
             boolean l = false;
             for (int i = 0; i < 6; i++)
@@ -164,7 +178,9 @@ void loop()
                 }
             if (l)
                 if (EEPROM.commit())
+                {
                     Serial.println("EEPROM-ba elmentve");
+                }
         }
         client.stop();
     }
@@ -201,9 +217,16 @@ void loop()
         postToFirebase("GPSdata",s,&http_client);
     }*/
 
-    if (test){
-        setupFirebase();
-        testFirebase();
+    if (test) // test
+    {
+        //setupFirebase();
+        //logPhone(testFirebase());
+        String s = "uzenet serial";
+        //logPhone(&s);
+
+        //testSIM800();
+        //inicSIM800L();
+        //postToFirebase("/GPRS/probasikeres", "TRUE", &http_client);
         test = false;
     }
 
