@@ -40,6 +40,8 @@ unsigned long t = millis();
 #define WAVGAT_UNO 4
 #define NODEMCU 44
 
+char *out = (char *)malloc(sizeof(char *) * 200);
+
 void setPins()
 {
     Wire.beginTransmission(WAVGAT_UNO); // transmit to device #4
@@ -125,13 +127,15 @@ void tt()
 
 boolean test = false;
 
-void logPhone(String out[])
+void logPhone(char *out)
 {
     if (client.connect(gateWay, PORT))
     {
         client.println("Serial.monitor");
-        for (int i = 0; i < sizeof(out); i++)
-            client.println(out[i]);
+
+        client.println(out);
+        Serial.println(out);
+
         client.println("END");
         client.stop();
     }
@@ -219,10 +223,10 @@ void loop()
 
     if (test) // test
     {
-        //setupFirebase();
-        //logPhone(testFirebase());
-        String s = "uzenet serial";
-        //logPhone(&s);
+        setupFirebase();
+
+        testFirebase(out);
+        logPhone(out);
 
         //testSIM800();
         //inicSIM800L();

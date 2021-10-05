@@ -54,29 +54,35 @@ void setupFirebase()
     //Firebase.begin(DATABASE_URL, "<database secret>");
 }
 
-String * testFirebase()
+int testInt = 1000;
+
+void testFirebase(char *out)
 {
-    String * s = new String[4]{"","","",""};
-    int testInt = 1000;
+    char c[50] = "void testFirebase(char **out)";
+
+    strcpy(out, c);
+
     String path = "/testFirebase/testInt";
     if (Firebase.ready())
     {
-        sprintf((char *)&s[0],"Set int... %s", Firebase.setInt(firebaseData, path, testInt) ? "ok" : firebaseData.errorReason().c_str());
-        //Serial.printf("Set int... %s\n", Firebase.setInt(firebaseData, path, testInt) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf(c, "Set int... %s\n", Firebase.setInt(firebaseData, path, ++testInt) ? "ok" : firebaseData.errorReason().c_str());
+        strcat(out, c);
 
-        sprintf((char *)&s[1],"Get int... %s", Firebase.getInt(firebaseData, path) ? String(firebaseData.intData()).c_str() : firebaseData.errorReason().c_str());
+        sprintf(c, "Get int... %s\n", Firebase.getInt(firebaseData, path) ? String(firebaseData.intData()).c_str() : firebaseData.errorReason().c_str());
+        strcat(out, c);
 
         FirebaseJson json;
         json.add("value", testInt);
         json.add("value2", testInt + 300);
         json.add("value3", testInt + 400);
 
-        sprintf((char *)&s[2],"Push json... %s", Firebase.pushJSON(firebaseData, path + "/test/push", json) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf(c, "Push json... %s\n", Firebase.pushJSON(firebaseData, path + "/test/push", json) ? "ok" : firebaseData.errorReason().c_str());
+        strcat(out, c);
 
         json.set("value", testInt + 100);
-        sprintf((char *)&s[3],"Update json... %s", Firebase.updateNode(firebaseData, String(path + "/test/push/" + firebaseData.pushName()), json) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf(c, "Update json... %s", Firebase.updateNode(firebaseData, String(path + "/test/push/" + firebaseData.pushName()), json) ? "ok" : firebaseData.errorReason().c_str());
+        strcat(out, c);
     }
-    return s;
 }
 
 void setFirebase(char *path, gpsDataStruct data)
@@ -86,7 +92,6 @@ void setFirebase(char *path, gpsDataStruct data)
     Firebase.setFloat(firebaseData, path, data.lon);
     Firebase.setFloat(firebaseData, path, data.speed);
 }
-
 
 void postToFirebase(const String &path, const String &data, HttpClient *http)
 {
