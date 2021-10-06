@@ -31,20 +31,25 @@ FirebaseData firebaseData;
 FirebaseAuth auth;
 FirebaseConfig config;
 
-void setupFirebase()
+char *out = (char *)malloc(sizeof(char *) * 200);
+
+char *setupFirebase()
 {
-    Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
+    sprintf(out, "Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
 
     /* Assign the api key (required) */
     config.api_key = API_KEY;
+    sprintf(out+strlen(out),"API KEY: %s\n",API_KEY);   
 
     /* Assign the user sign in credentials */
     auth.user.email = USER_EMAIL;
+    sprintf(out+strlen(out),"USER EMAIL: %s",USER_EMAIL);
     auth.user.password = USER_PASSWORD;
+    sprintf(out+strlen(out),"USER PASSWORD: %s",USER_PASSWORD);
 
     /* Assign the RTDB URL (required) */
     config.database_url = DATABASE_URL;
-
+    sprintf(out+strlen(out),"DATABASE_URL: %s",DATABASE_URL);
     /* Assign the callback function for the long running token generation task */
     config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
 
@@ -52,17 +57,21 @@ void setupFirebase()
 
     //Or use legacy authenticate method
     //Firebase.begin(DATABASE_URL, "<database secret>");
+
+    return out;
 }
 
 int testInt = 1000;
 
-void testFirebase(char *out)
+char *testFirebase()
 {
-    char c[50] = "void testFirebase(char **out)";
+    char c[50] = {};
 
-    strcpy(out, c);
+    strcpy(out, "testFirebase()\n");
+    strcat(out, auth.token.uid.c_str());
 
-    String path = "/testFirebase/testInt";
+    String path = auth.token.uid.c_str();
+    path += "/testFirebase/testInt";
     if (Firebase.ready())
     {
         sprintf(c, "Set int... %s\n", Firebase.setInt(firebaseData, path, ++testInt) ? "ok" : firebaseData.errorReason().c_str());
@@ -83,6 +92,7 @@ void testFirebase(char *out)
         sprintf(c, "Update json... %s", Firebase.updateNode(firebaseData, String(path + "/test/push/" + firebaseData.pushName()), json) ? "ok" : firebaseData.errorReason().c_str());
         strcat(out, c);
     }
+    return out;
 }
 
 void setFirebase(char *path, gpsDataStruct data)

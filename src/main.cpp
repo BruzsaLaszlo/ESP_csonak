@@ -33,14 +33,13 @@ uint8_t leds[SIZE_LEDS];
 uint8_t b[SIZE_B];
 //uint8_t *bb = b;
 unsigned long t = millis();
+boolean unoConnected = false;
 
 #define FIRST_FLAG 100
 
 #include <Wire.h>
 #define WAVGAT_UNO 4
 #define NODEMCU 44
-
-char *out = (char *)malloc(sizeof(char *) * 200);
 
 void setPins()
 {
@@ -141,6 +140,8 @@ void logPhone(char *out)
     }
 }
 
+char scc[70] = {};
+
 void loop()
 {
     delay(50);
@@ -149,15 +150,18 @@ void loop()
 
     if (client.connect(gateWay, PORT))
     {
+        // Message
+        char m[50] = {};
+
         client.println("ESP8266: Connected!");
 
-        client.readStringUntil('Q');
+        //client.readStringUntil('Q');
         b[0] = atoi(client.readStringUntil('B').c_str());
         if (b[0] == 100)
         {
-            test = client.readStringUntil('S') == "true" ? true : false;
+            /*test = client.readStringUntil('S') == "true" ? true : false;
             Serial.println("first");
-            Serial.println(test);
+            Serial.println(test);*/
             b[0] = 0;
             char c[4];
             for (int i = 0; i < SIZE_LEDS; i++)
@@ -180,13 +184,12 @@ void loop()
                     EEPROM.write(i, leds[i]);
                     l = true;
                 }
-            if (l)
-                if (EEPROM.commit())
-                {
-                    Serial.println("EEPROM-ba elmentve");
-                }
+            if (l && EEPROM.commit())
+                strcat(m, "EEPROM-ba elmentve");
         }
         client.stop();
+        if (strlen(m) > 0)
+            logPhone(m);
     }
     else
     {
@@ -200,8 +203,17 @@ void loop()
     {
         //MAX 128 bytes
         uint8_t requestSize = Wire.requestFrom(WAVGAT_UNO, (PINS_A));
-        if (requestSize == 0)
-            Serial.println("Nincs meg az UNO!!!!");
+        if (requestSize == 0 && unoConnected)
+        {
+            unoConnected = false;
+            logPhone((char *)"Nincs meg az UNO!!!!");
+        }
+        if (requestSize > 0 && !unoConnected)
+        {
+            unoConnected = true;
+            logPhone((char *)"Megvan az UNO!!!!");
+        }
+        //
         while (Wire.available() > 0)
             Wire.read();
     }
@@ -223,10 +235,8 @@ void loop()
 
     if (test) // test
     {
-        setupFirebase();
-
-        testFirebase(out);
-        logPhone(out);
+        logPhone(setupFirebase());
+        logPhone(testFirebase());
 
         //testSIM800();
         //inicSIM800L();
@@ -235,12 +245,23 @@ void loop()
     }
 
     /* SERIAL PRINT */
+    char sc[70] = {'\n'};
+    char cc[5] = {};
     for (int i = 0; i < SIZE_B; i++)
     {
-        Serial.print(b[i]);
-        Serial.print("  ");
+        sprintf(cc, "%d ", b[i]);
+        strcat(sc, cc);
     }
-    Serial.print(millis() - t);
-    Serial.println("ms");
+
+    unsigned long ct = millis();
+
+    if (strcmp(scc, sc) != 0 || ct - t > 100)
+    {
+        strcpy(scc, sc);
+        Serial.print(sc);
+        Serial.printf("%lu ms\n", ct - t);
+    }
+    else
+        Serial.print('^');
     t = millis();
 }

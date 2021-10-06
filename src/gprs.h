@@ -17,6 +17,9 @@ char pass[] = "";
 SoftwareSerial sim800(rxPin,txPin);
 TinyGsm modem(sim800);
 
+#define SSL_PORT 443
+#define DATABASE_URL "https://steg-esp8266.firebaseio.com" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
+
 TinyGsmClientSecure gsm_client_secure_modem(modem, 0);
 HttpClient http_client = HttpClient(gsm_client_secure_modem, DATABASE_URL, SSL_PORT);
 
