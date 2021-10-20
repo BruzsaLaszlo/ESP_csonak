@@ -1,14 +1,15 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoOTA.h>
+char *out = (char *)malloc(sizeof(char *) * 700);
 #include <firebase.h>
 
-#define TEST_SIM800 FALSE
+#define TEST_SIM800 false
 
 #if TEST_SIM800
-#include <gprs.h>
-#else
 #include <sim800_test.h>
+#else
+#include <gprs.h>
 #endif
 
 IPAddress gateWay;
@@ -134,14 +135,14 @@ void logPhone(char *out)
 
         client.println(out);
         Serial.println(out);
-
+        out[0] = 0;
         client.println("END");
         client.stop();
     }
 }
 
 char scc[70] = {};
-
+//#include <sim800R.h>
 void loop()
 {
     delay(50);
@@ -155,13 +156,11 @@ void loop()
 
         client.println("ESP8266: Connected!");
 
-        //client.readStringUntil('Q');
+        test = client.readStringUntil('S') == "true" ? true : false;
+
         b[0] = atoi(client.readStringUntil('B').c_str());
         if (b[0] == 100)
         {
-            /*test = client.readStringUntil('S') == "true" ? true : false;
-            Serial.println("first");
-            Serial.println(test);*/
             b[0] = 0;
             char c[4];
             for (int i = 0; i < SIZE_LEDS; i++)
@@ -238,9 +237,15 @@ void loop()
         logPhone(setupFirebase());
         logPhone(testFirebase());
 
+        inicSIM800L();
+        logPhone(out);
+        postToFirebase("/GPRS/probasikeres", "TRUE", &http_client);
+        logPhone(out);
+
         //testSIM800();
-        //inicSIM800L();
-        //postToFirebase("/GPRS/probasikeres", "TRUE", &http_client);
+
+        /* kell a vegere */
+        logPhone((char *)"testEND");
         test = false;
     }
 

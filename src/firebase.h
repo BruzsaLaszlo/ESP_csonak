@@ -31,7 +31,7 @@ FirebaseData firebaseData;
 FirebaseAuth auth;
 FirebaseConfig config;
 
-char *out = (char *)malloc(sizeof(char *) * 200);
+
 
 char *setupFirebase()
 {
@@ -43,13 +43,13 @@ char *setupFirebase()
 
     /* Assign the user sign in credentials */
     auth.user.email = USER_EMAIL;
-    sprintf(out+strlen(out),"USER EMAIL: %s",USER_EMAIL);
+    sprintf(out+strlen(out),"USER EMAIL: %s\n",USER_EMAIL);
     auth.user.password = USER_PASSWORD;
-    sprintf(out+strlen(out),"USER PASSWORD: %s",USER_PASSWORD);
+    sprintf(out+strlen(out),"USER PASSWORD: %s\n",USER_PASSWORD);
 
     /* Assign the RTDB URL (required) */
     config.database_url = DATABASE_URL;
-    sprintf(out+strlen(out),"DATABASE_URL: %s",DATABASE_URL);
+    sprintf(out+strlen(out),"DATABASE_URL: %s\n",DATABASE_URL);
     /* Assign the callback function for the long running token generation task */
     config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
 
@@ -67,14 +67,14 @@ char *testFirebase()
 {
     char c[50] = {};
 
-    strcpy(out, "testFirebase()\n");
+    strcpy(out, "testFirebase()\nUID: ");
     strcat(out, auth.token.uid.c_str());
 
     String path = auth.token.uid.c_str();
     path += "/testFirebase/testInt";
     if (Firebase.ready())
     {
-        sprintf(c, "Set int... %s\n", Firebase.setInt(firebaseData, path, ++testInt) ? "ok" : firebaseData.errorReason().c_str());
+        sprintf(c, "\nSet int... %s\n", Firebase.setInt(firebaseData, path, ++testInt) ? "ok" : firebaseData.errorReason().c_str());
         strcat(out, c);
 
         sprintf(c, "Get int... %s\n", Firebase.getInt(firebaseData, path) ? String(firebaseData.intData()).c_str() : firebaseData.errorReason().c_str());
@@ -118,10 +118,7 @@ void postToFirebase(const String &path, const String &data, HttpClient *http)
     url += path + ".json";
     url += "?auth=";
     url += API_KEY;
-    Serial.print("POST:");
-    Serial.println(url);
-    Serial.print("Data:");
-    Serial.println(data);
+    sprintf(out,"POST: %s\nData: %s\n",url.c_str(),data.c_str());
     //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
     String contentType = "application/json";
@@ -131,11 +128,11 @@ void postToFirebase(const String &path, const String &data, HttpClient *http)
     // read the status code and body of the response
     //statusCode-200 (OK) | statusCode -3 (TimeOut)
     statusCode = http->responseStatusCode();
-    Serial.print("Status code: ");
-    Serial.println(statusCode);
+    strcat(out,(char*)"Status code: ");
+    strcat(out,(new String(statusCode))->c_str());
     response = http->responseBody();
-    Serial.print("Response: ");
-    Serial.println(response);
+    strcat(out,(char*)"\nResponse: ");
+    strcat(out,response.c_str());
     //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
     //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
@@ -143,7 +140,7 @@ void postToFirebase(const String &path, const String &data, HttpClient *http)
     {
         Serial.println();
         http->stop(); // Shutdown
-        Serial.println("HTTP POST disconnected");
+        strcat(out,(char*)"HTTP POST disconnected");
     }
     //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 }

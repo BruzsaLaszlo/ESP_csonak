@@ -32,15 +32,17 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// or Software Serial on Uno, Nano
+// Set serial for debug console (to the Serial Monitor, default speed 115200)
+#define SerialMon Serial
+
 #include <SoftwareSerial.h>
-SoftwareSerial SerialAT(14, 12); // RX, TX
+SoftwareSerial SerialAT(D7, D8); // RX, TX
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
-#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
@@ -55,15 +57,15 @@ SoftwareSerial SerialAT(14, 12); // RX, TX
 /*
  * Tests enabled
  */
-#define TINY_GSM_TEST_GPRS true
+#define TINY_GSM_TEST_GPRS false
 #define TINY_GSM_TEST_WIFI false
-#define TINY_GSM_TEST_TCP true
-#define TINY_GSM_TEST_SSL true
+#define TINY_GSM_TEST_TCP false
+#define TINY_GSM_TEST_SSL false
 #define TINY_GSM_TEST_CALL false
 #define TINY_GSM_TEST_SMS false
 #define TINY_GSM_TEST_USSD false
 #define TINY_GSM_TEST_BATTERY true
-#define TINY_GSM_TEST_TEMPERATURE true
+#define TINY_GSM_TEST_TEMPERATURE false
 #define TINY_GSM_TEST_GSM_LOCATION false
 #define TINY_GSM_TEST_NTP false
 #define TINY_GSM_TEST_TIME false
@@ -75,11 +77,11 @@ SoftwareSerial SerialAT(14, 12); // RX, TX
 #define GSM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
-#define SMS_TARGET  "+36304737115"
+#define SMS_TARGET "+36304737115"
 #define CALL_TARGET "+36304737115"
 
 // Your GPRS credentials, if any
-const char  apn[] = "internet.telekom";
+const char apn[] = "internet.telekom";
 // const char apn[] = "ibasis.iot";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
@@ -115,27 +117,30 @@ TinyGsm modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClientSecure gsm_client_secure_modem(modem, 0);
-#include <ArduinoHttpClient.h>
-HttpClient http_client = HttpClient(gsm_client_secure_modem, DATABASE_URL, SSL_PORT);
-
 void testSIM800()
 {
     // Set console baud rate
+    SerialMon.begin(115200);
+    delay(10);
 
     // !!!!!!!!!!!
     // Set your reset, enable, power pins here
     // !!!!!!!!!!!
 
     DBG("Wait...");
+    strcpy(out, (char *)"Wait...\n");
     delay(6000);
 
     // Set GSM module baud rate
-    TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
-    SerialAT.begin(9600);
+    uint32_t baud = TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+    strcat(out, (new String(baud))->c_str());
+    // SerialAT.begin(9600);
+
+    //LOOP!!!!
     // Restart takes quite some time
     // To skip it, call init() instead of restart()
     DBG("Initializing modem...");
+    strcat(out, (char *)"\ninic");
     if (!modem.restart())
     {
         // if (!modem.init()) {
@@ -147,11 +152,11 @@ void testSIM800()
 
     String name = modem.getModemName();
     DBG("Modem Name:", name);
+    strcat(out, name.c_str());
 
     String modemInfo = modem.getModemInfo();
+    strcat(out, modemInfo.c_str());
     DBG("Modem Info:", modemInfo);
-
-    http_client.setHttpResponseTimeout(5 * 1000);
 
 #if TINY_GSM_TEST_GPRS
     // Unlock your SIM card with a PIN if needed
@@ -199,6 +204,7 @@ void testSIM800()
 
     bool res = modem.isGprsConnected();
     DBG("GPRS status:", res ? "connected" : "not connected");
+    strcat(out, (new String(res))->c_str());
 
     String ccid = modem.getSimCCID();
     DBG("CCID:", ccid);
@@ -266,7 +272,7 @@ void testSIM800()
                 start = millis();
             }
         }
-        Serial.println(logo);
+        SerialMon.println(logo);
         DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
         client.stop();
     }
@@ -311,7 +317,7 @@ void testSIM800()
                 startS = millis();
             }
         }
-        Serial.println(logoS);
+        SerialMon.println(logoS);
         DBG("#####  RECEIVED:", strlen(logoS), "CHARACTERS");
         secureClient.stop();
     }
@@ -322,10 +328,10 @@ void testSIM800()
     DBG("Calling:", CALL_TARGET);
 
     // This is NOT supported on M590
-    res = modem.callNumber(CALL_TARGET);
+    bool res = modem.callNumber(CALL_TARGET);
     DBG("Call:", res ? "OK" : "fail");
 
-    if (res)
+    if (res && false)
     {
         delay(1000L);
 
@@ -518,8 +524,8 @@ void testSIM800()
     DBG("End of tests.");
 
     // Do nothing forevermore
-    while (true)
+    /*while (true)
     {
         modem.maintain();
-    }
+    }*/
 }

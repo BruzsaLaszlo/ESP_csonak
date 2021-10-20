@@ -12,8 +12,8 @@ char user[] = "";
 char pass[] = "";
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!1
-#define rxPin 14
-#define txPin 12
+#define rxPin D7
+#define txPin D8
 SoftwareSerial sim800(rxPin,txPin);
 TinyGsm modem(sim800);
 
@@ -26,18 +26,20 @@ HttpClient http_client = HttpClient(gsm_client_secure_modem, DATABASE_URL, SSL_P
 void inicSIM800L()
 {
     sim800.begin(9600);
-    Serial.println("SIM800L serial initialize");
+    strcpy(out, (char*)"SIM800L serial initialize\n");
 
     //Restart takes quite some time
     //To skip it, call init() instead of restart()
-    Serial.println("Initializing modem...");
+    strcat(out, (char*)"Initializing modem...\n");
     modem.init();
     String modemInfo = modem.getModemInfo();
-    Serial.print("Modem: ");
-    Serial.println(modemInfo);
+    strcat(out, (char*)"Modem: ");
+    strcat(out, (char*)modemInfo.c_str());
+
 
     // Unlock your SIM card with a PIN
     //modem.simUnlock("1234");
 
     http_client.setHttpResponseTimeout(5 * 1000); //^0 secs timeout
+    strcat(out, (char*)"setHttpResponseTimeout(5 * 1000)\n");
 }
