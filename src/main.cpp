@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoOTA.h>
-#include <firebase.h>
+#include <database.h>
 
 IPAddress gateWay;
 #include <WifiConnect.h>
@@ -104,10 +104,10 @@ void setup()
   delay(100);
   setPins();
 
-  connectWifi(0);
+  connectWifi();
 
   setupFirebase();
-  
+
   client.setTimeout(300);
   ArduinoOTA.begin();
 }
@@ -136,9 +136,9 @@ void loop()
       Serial.println("first");
       b[0] = 0;
       char c[4];
-      for (int i = 0; i < SIZE_LEDS; i++)
+      for (uint8_t led : leds)
       {
-        sprintf(c, "%d", leds[i]);
+        sprintf(c, "%d", led);
         client.println(c);
       }
       client.stop();
@@ -182,12 +182,13 @@ void loop()
 
   // get GPS data
   {
-    gpsDataStruct data;
+    GpsDataStruct data;
 
     int numbytes = sizeof(data);
     int n = Wire.requestFrom(2, numbytes);
     if (n == numbytes) // check if the same amount received as requested
     {
+        // TODO
       Wire.readBytes((char *)&data, n);
     }
   }
