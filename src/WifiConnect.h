@@ -9,8 +9,8 @@ const char *password[] = {"Lacika007", "Nagyponty21", "53745309", "InterNyet17"}
 
 void connectWifi()
 {
+  WiFiClass::hostname("Csonak_ESP");
   WiFiClass::mode(WIFI_STA);
-  WiFiClass::setHostname("Csonak_ESP");
 
   WiFi.setAutoConnect(true);
   WiFi.begin(ssid[which], password[which]);
@@ -22,6 +22,8 @@ void connectWifi()
   }
   gateWay = WiFi.gatewayIP();
   //long rssi = WiFi.RSSI();
+  Serial.print("MyName: ");
+  Serial.println(WiFi.getHostname());
   Serial.print("IP: ");
   Serial.println(WiFi.localIP().toString());
   Serial.print("Csatlakozva: ");
